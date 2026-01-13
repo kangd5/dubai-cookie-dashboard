@@ -212,12 +212,12 @@ if not st.session_state.get('data_loaded', False):
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.write("")  # 간격 조절
-        img_path = os.path.join(os.path.dirname(__file__), "dubai_cookie.png")
+        img_path = os.path.join(os.path.dirname(__file__), "_cookie.png")
         if os.path.exists(img_path):
             # 이미지 크기 조절을 위한 중첩 컬럼 (이미지 사이즈 축소)
             sub_c1, sub_c2, sub_c3 = st.columns([1, 2, 1])
             with sub_c2:
-                st.image(img_path, use_container_width=True, caption="Dubai Chewy Cookie 🍫🥑")
+                st.image(img_path, use_container_width=True, caption="Naver Keywords 🍫🥑")
         
         st.markdown(f"""
         <div style="text-align: center; padding: 20px; background-color: {WHITE}; border-radius: 15px; border: 2px solid {SECONDARY_GREEN};">
