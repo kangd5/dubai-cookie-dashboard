@@ -20,7 +20,7 @@ WHITE = "#FFFFFF"
 TERTIARY_GOLD = "#C89B5C"   # Caramel Gold
 
 # 페이지 설정
-st.set_page_config(page_title="두쫀쿠 데이터 분석 대시보드 🧆", layout="wide")
+st.set_page_config(page_title="네이버 키워드 데이터 분석 대시보드", layout="wide")
 
 st.markdown(f"""
 <style>
@@ -153,7 +153,7 @@ def fetch_search_results(api_type, keywords, max_count=1000):
 
 # --- 메인 UI 구성 ---
 
-st.markdown("<h1 style='text-align: center;'>두쫀쿠 데이터 분석 대시보드 🧆</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>네이버 키워드 데이터 분석 대시보드 🧆</h1>", unsafe_allow_html=True)
 
 if not CLIENT_ID:
     st.error("⚠️ 네이버 API Key가 설정되지 않았습니다. 사이드바의 안내 또는 가이드 문서를 확인해 주세요.")
