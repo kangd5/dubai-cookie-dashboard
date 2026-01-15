@@ -75,17 +75,29 @@ st.markdown(f"""
 
 # API 자격 증명 로드 함수
 def get_naver_credentials():
-    # 1. Streamlit Secrets (배포용) 확인
-    if "NAVER_CLIENT_ID" in st.secrets:
-        return st.secrets["NAVER_CLIENT_ID"], st.secrets["NAVER_CLIENT_SECRET"]
-    
-    # 2. 환경 변수/dotenv (로컬용) 확인
-    client_id = os.getenv("NAVER_CLIENT_ID")
-    client_secret = os.getenv("NAVER_CLIENT_SECRET")
-    
-    return client_id, client_secret
+    client_id = None
+    client_secret = None
+    source = None
 
-CLIENT_ID, CLIENT_SECRET = get_naver_credentials()
+    # 1. Streamlit Secrets (배포용) 확인
+    try:
+        if "NAVER_CLIENT_ID" in st.secrets:
+            client_id = st.secrets["NAVER_CLIENT_ID"]
+            client_secret = st.secrets.get("NAVER_CLIENT_SECRET")
+            source = "Streamlit Secrets"
+    except:
+        pass
+
+    # 2. 환경 변수/dotenv (로컬용) 확인
+    if not client_id:
+        client_id = os.getenv("NAVER_CLIENT_ID")
+        client_secret = os.getenv("NAVER_CLIENT_SECRET")
+        if client_id:
+            source = ".env 파일 또는 환경 변수"
+
+    return client_id, client_secret, source
+
+CLIENT_ID, CLIENT_SECRET, CREDENTIAL_SOURCE = get_naver_credentials()
 
 def get_headers():
     return {
@@ -170,8 +182,31 @@ def fetch_search_results(api_type, keywords, max_count=1000):
 st.markdown("<h1 style='text-align: center;'>네이버 키워드 데이터 분석 대시보드 🧆</h1>", unsafe_allow_html=True)
 
 if not CLIENT_ID or not CLIENT_SECRET:
-    st.error("⚠️ 네이버 API 인증 정보(Client ID 또는 Secret)가 설정되지 않았습니다. 사이드바의 안내 또는 가이드 문서를 확인해 주세요.")
-    st.info("로컬: .env 파일 / 배포: Streamlit Cloud Secrets 설정 필요")
+    st.error("⚠️ 네이버 API 인증 정보(Client ID 또는 Secret)가 설정되지 않았습니다.")
+
+    # 진단 정보
+    with st.expander("🔍 진단 정보 (클릭하여 펼치기)", expanded=True):
+        st.write("**현재 상태:**")
+        st.write(f"- Client ID: {'✅ 설정됨' if CLIENT_ID else '❌ 없음'}")
+        st.write(f"- Client Secret: {'✅ 설정됨' if CLIENT_SECRET else '❌ 없음'}")
+        st.write(f"- 인증 정보 출처: {CREDENTIAL_SOURCE if CREDENTIAL_SOURCE else '❌ 설정되지 않음'}")
+
+        st.write("\n**설정 방법:**")
+        st.code("""
+# 1. 프로젝트 루트에 .env 파일 생성
+NAVER_CLIENT_ID=your_client_id_here
+NAVER_CLIENT_SECRET=your_client_secret_here
+
+# 2. 또는 환경 변수로 설정
+export NAVER_CLIENT_ID=your_client_id_here
+export NAVER_CLIENT_SECRET=your_client_secret_here
+        """, language="bash")
+
+        st.write("**네이버 API 신청 방법:**")
+        st.write("1. https://developers.naver.com/apps/#/register 방문")
+        st.write("2. 애플리케이션 등록")
+        st.write("3. 사용 API: 검색, 데이터랩 선택")
+        st.write("4. Client ID와 Client Secret 복사")
 
 # 사이드바 구성
 st.sidebar.title("🔍 분석 옵션")
@@ -182,6 +217,20 @@ input_keywords = st.sidebar.text_input(
 selected_keywords = [k.strip() for k in input_keywords.split(",") if k.strip()]
 
 run_analysis = st.sidebar.button("⚡ 실시간 분석 실행", type="primary")
+
+# API 상태 표시
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📊 API 연결 상태")
+if CLIENT_ID and CLIENT_SECRET:
+    st.sidebar.success("✅ API 인증 정보 로드됨")
+    if CREDENTIAL_SOURCE:
+        st.sidebar.caption(f"출처: {CREDENTIAL_SOURCE}")
+    # ID 일부만 표시 (보안)
+    masked_id = CLIENT_ID[:4] + "..." + CLIENT_ID[-4:] if len(CLIENT_ID) > 8 else "****"
+    st.sidebar.caption(f"Client ID: {masked_id}")
+else:
+    st.sidebar.error("❌ API 인증 정보 없음")
+    st.sidebar.caption(".env 파일을 설정하세요")
 
 # 키워드별 고정 컬러 맵 생성 (일관성 유지)
 color_palette = [PRIMARY_BROWN, SECONDARY_GREEN, TERTIARY_GOLD]
