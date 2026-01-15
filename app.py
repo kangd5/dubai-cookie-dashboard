@@ -98,7 +98,7 @@ def get_headers():
 
 @st.cache_data(show_spinner="쇼핑 트렌드 데이터를 불러오는 중...")
 def fetch_datalab_trend(keywords, start_date="2025-01-01", end_date=datetime.now().strftime("%Y-%m-%d")):
-    if not CLIENT_ID: return pd.DataFrame()
+    if not CLIENT_ID or not CLIENT_SECRET: return pd.DataFrame()
     
     url = "https://openapi.naver.com/v1/datalab/search"
     data = {
@@ -124,7 +124,7 @@ def fetch_datalab_trend(keywords, start_date="2025-01-01", end_date=datetime.now
 
 @st.cache_data(show_spinner="검색 결과 데이터를 수집하는 중...")
 def fetch_search_results(api_type, keywords, max_count=1000):
-    if not CLIENT_ID: return pd.DataFrame(), {}
+    if not CLIENT_ID or not CLIENT_SECRET: return pd.DataFrame(), {}
     
     base_url = f"https://openapi.naver.com/v1/search/{api_type}.json"
     all_results = []
@@ -155,8 +155,8 @@ def fetch_search_results(api_type, keywords, max_count=1000):
 
 st.markdown("<h1 style='text-align: center;'>네이버 키워드 데이터 분석 대시보드 🧆</h1>", unsafe_allow_html=True)
 
-if not CLIENT_ID:
-    st.error("⚠️ 네이버 API Key가 설정되지 않았습니다. 사이드바의 안내 또는 가이드 문서를 확인해 주세요.")
+if not CLIENT_ID or not CLIENT_SECRET:
+    st.error("⚠️ 네이버 API 인증 정보(Client ID 또는 Secret)가 설정되지 않았습니다. 사이드바의 안내 또는 가이드 문서를 확인해 주세요.")
     st.info("로컬: .env 파일 / 배포: Streamlit Cloud Secrets 설정 필요")
 
 # 사이드바 구성
