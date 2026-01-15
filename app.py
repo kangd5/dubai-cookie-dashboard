@@ -118,8 +118,12 @@ def fetch_datalab_trend(keywords, start_date="2025-01-01", end_date=datetime.now
                 for entry in group['data']:
                     results.append({"period": entry['period'], "ratio": entry['ratio'], "keyword": group_name})
             return pd.DataFrame(results)
-    except:
-        pass
+        else:
+            st.warning(f"⚠️ 트렌드 데이터 수집 실패: HTTP {response.status_code} - {response.text[:200]}")
+    except requests.exceptions.RequestException as e:
+        st.error(f"❌ 트렌드 API 연결 오류: {str(e)}")
+    except Exception as e:
+        st.error(f"❌ 트렌드 데이터 처리 오류: {str(e)}")
     return pd.DataFrame()
 
 @st.cache_data(show_spinner="검색 결과 데이터를 수집하는 중...")
@@ -140,15 +144,25 @@ def fetch_search_results(api_type, keywords, max_count=1000):
                     data = response.json()
                     if start == 1:
                         total_counts[kw] = data.get('total', 0)
-                    
+
                     items = data.get('items', [])
                     if not items: break
                     for item in items:
                         item['keyword'] = kw
                         all_results.append(item)
                     time.sleep(0.1)
-                else: break
-            except: break
+                else:
+                    if start == 1:  # 첫 요청 실패시에만 에러 표시
+                        st.warning(f"⚠️ '{kw}' {api_type} 검색 실패: HTTP {response.status_code}")
+                    break
+            except requests.exceptions.RequestException as e:
+                if start == 1:  # 첫 요청 실패시에만 에러 표시
+                    st.error(f"❌ '{kw}' {api_type} API 연결 오류: {str(e)}")
+                break
+            except Exception as e:
+                if start == 1:  # 첫 요청 실패시에만 에러 표시
+                    st.error(f"❌ '{kw}' {api_type} 데이터 처리 오류: {str(e)}")
+                break
     return pd.DataFrame(all_results), total_counts
 
 # --- 메인 UI 구성 ---
@@ -193,10 +207,16 @@ if run_analysis or 'data_loaded' in st.session_state:
         st.write("3. 쇼핑 검색 결과 수집 중 (최대 1,000건)...")
         df_shop, shop_total_counts = fetch_search_results("shop", selected_keywords)
         
-        status.update(label="✅ 데이터 수집 완료!", state="complete", expanded=False)
+        # 데이터 수집 결과 확인
+        has_data = not (df_trend.empty and df_blog.empty and df_shop.empty)
+        if has_data:
+            status.update(label="✅ 데이터 수집 완료!", state="complete", expanded=False)
+        else:
+            status.update(label="⚠️ 데이터 수집 실패", state="error", expanded=True)
 
     if df_trend.empty and df_blog.empty and df_shop.empty:
-        st.warning("수집된 데이터가 없습니다. 키워드나 API 설정을 확인해 주세요.")
+        st.error("❌ 수집된 데이터가 없습니다. 위의 에러 메시지를 확인하고 API 설정을 점검해 주세요.")
+        st.info("💡 확인사항:\n- API Client ID와 Secret이 올바르게 설정되었는지\n- 네이버 개발자 센터에서 해당 API가 활성화되었는지\n- 키워드 입력이 정확한지")
         st.stop()
     
     st.info(f"수집 기준일: {datetime.now().strftime('%Y-%m-%d')} | 분석 키워드: {', '.join(selected_keywords)}")
